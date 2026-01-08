@@ -1,7 +1,15 @@
 version: "3.9"
 
 services:
-  api:
+  web:
     build: .
+    container_name: kino_scraper
     ports:
       - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PLAYWRIGHT_HEADLESS=1
+    volumes:
+      - .:/app
+      - ./.playwright:/root/.cache/ms-playwright
+    restart: unless-stopped
