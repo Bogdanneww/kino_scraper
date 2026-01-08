@@ -1,5 +1,8 @@
 from fastapi import FastAPI
+
 from app.api.routers import scraping
+from app.schemas.common import StatusResponse
+
 
 app = FastAPI(
     title="Kinorium Scraper API",
@@ -8,6 +11,7 @@ app = FastAPI(
 
 app.include_router(scraping.router)
 
-@app.get("/")
+
+@app.get("/", response_model=StatusResponse)
 async def root():
     return {"status": "ok"}

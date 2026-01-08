@@ -7,7 +7,9 @@ async def find_movie_url(title: str) -> str | None:
     search_url = f"{settings.BASE_URL}/search/"
     params = {"q": title}
 
-    async with httpx.AsyncClient(timeout=settings.HTTP_TIMEOUT) as client:
+    async with httpx.AsyncClient(
+        timeout=settings.HTTP_TIMEOUT
+    ) as client:
         response = await client.get(search_url, params=params)
 
     response.raise_for_status()
@@ -15,7 +17,7 @@ async def find_movie_url(title: str) -> str | None:
     soup = BeautifulSoup(response.text, "html.parser")
 
     first_result = soup.select_one(
-        ".search-results-item__title a"
+        ".search-results-item__title a[href]"
     )
 
     if not first_result:
