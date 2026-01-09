@@ -1,20 +1,29 @@
-import json
-from pathlib import Path
+from sqlalchemy.ext.asyncio import AsyncSession
 
-FILE = Path("storage/results.json")
+from app.db.models import Movie
+from app.schemas.movie import MovieDetails
 
 
-def save_result(data: dict) -> None:
-    FILE.parent.mkdir(exist_ok=True)
+async def save_result(
+    session: AsyncSession,
+    movie: MovieDetails,
+) -> Movie:
+    """
+    Save scraped movie details to database.
+    """
 
-    if FILE.exists():
-        existing = json.loads(FILE.read_text(encoding="utf-8"))
-    else:
-        existing = []
-
-    existing.append(data)
-
-    FILE.write_text(
-        json.dumps(existing, indent=2, ensure_ascii=False),
-        encoding="utf-8",
+    db_movie = Movie(
+        title=movie.title,
+        year=movie.year,
+        rating=movie.rating,
+        genres=",".join(movie.genres),
+        description=movie.description,
+        poster=str(movie.poster) if movie.poster else None,
+        url=str(movie.url),
     )
+
+    session.add(db_movie)
+    await session.commit()
+    await session.refresh(db_movie)
+
+    return db_movie

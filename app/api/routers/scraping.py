@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Query, HTTPException, status
+from fastapi import APIRouter, Query, HTTPException, status, Depends
 from pydantic import BaseModel
 import httpx
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.schemas.common import StatusResponse
 from app.schemas.scraping import GenreResponse
@@ -12,7 +13,9 @@ from app.services.browser_scraper import (
     scrape_movie_details,
     open_movie_in_browser,
 )
+
 from app.crud.scraping_result import save_result
+from app.db.database import get_async_session
 
 
 router = APIRouter(
@@ -60,9 +63,12 @@ async def scrape_by_genre(
     response_model=MovieDetails,
     status_code=status.HTTP_200_OK,
     summary="Get movie details",
-    description="Scrape detailed movie information using a headless browser.",
+    description="Scrape detailed movie information using a headless browser and save it to database.",
 )
-async def get_movie_details(request: MovieRequest):
+async def get_movie_details(
+    request: MovieRequest,
+    session: AsyncSession = Depends(get_async_session),
+):
     url = await find_movie_url(request.title)
     if not url:
         raise HTTPException(
@@ -72,9 +78,11 @@ async def get_movie_details(request: MovieRequest):
 
     data = await scrape_movie_details(url)
 
-    save_result(data)
+    movie = MovieDetails(**data)
 
-    return data
+    await save_result(session, movie)
+
+    return movie
 
 
 @router.post(
