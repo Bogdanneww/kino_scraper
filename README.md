@@ -1,7 +1,6 @@
 # 🎬 Kino Scraper API
 
-Asynchronous REST API service for scraping movie data from  
-👉 https://ua.kinorium.com/
+Asynchronous REST API service for scraping movie data
 
 Built as a test task for a Trainee / Junior Python Developer position.
 
@@ -27,6 +26,7 @@ Built as a test task for a Trainee / Junior Python Developer position.
 - Playwright (Chromium)
 - Pydantic v2
 - pytest (async)
+- SQLite
 
 ---
 
@@ -44,7 +44,11 @@ source .venv/bin/activate
 pip install -r requirements.txt
 
 playwright install
-### 3️⃣ Run application
+
+### 3️⃣ Configuration
+Create a .env file from .env.sample.
+
+### Run application
 uvicorn app.main:app --reload
 
 
@@ -55,6 +59,12 @@ uvicorn app.main:app --reload
 
 ### 🐳 Run with Docker
 docker-compose up --build
+
+### Browser Open
+`POST /scrape/movie/open`
+* **Goal**: Physically open the page on the server machine.
+* **Body**: `{"title": "Interstellar"}`
+* **⚠️ Note**: This endpoint requires a GUI environment. It works **only during local execution** and will not function inside a Docker container.
 
 ### 🔗 API Endpoints
 ### 🔹 GET /scrape/genre
@@ -95,7 +105,3 @@ pytest
 Non-headless browser requires GUI support on the host machine
 
 Kinorium page structure may change over time
-
-### 👤 Author
-
-Developed by Bohdan Mykyichuk
