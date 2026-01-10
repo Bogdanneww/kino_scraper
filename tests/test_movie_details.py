@@ -1,54 +1,29 @@
 import pytest
 from httpx import AsyncClient, ASGITransport
-
 from app.main import app
 
 
 @pytest.mark.asyncio
 async def test_movie_details_success(monkeypatch):
-    async def mock_find_movie_url(title):
-        return "https://ua.kinorium.com/fake-movie"
-
-    async def mock_scrape_movie_details(url):
+    async def mock_scrape_movie_details(title):
         return {
-            "title": "Fake Movie",
+            "title": title,
             "year": 2023,
             "rating": 7.5,
-            "genres": ["Action", "Drama"],
-            "description": "Fake description",
-            "poster": "https://example.com/poster.jpg",
-            "url": url,
+            "genres": ["Action"],
+            "description": "Test",
+            "poster": "https://example.com/img.jpg",
+            "url": "https://ua.kinorium.com/movie/1/",
         }
 
-    async def mock_save_result(session, movie):
-        return None
+    async def mock_save_result(session, movie): return None
 
-    monkeypatch.setattr(
-        "app.api.routers.scraping.find_movie_url",
-        mock_find_movie_url,
-    )
-    monkeypatch.setattr(
-        "app.api.routers.scraping.scrape_movie_details",
-        mock_scrape_movie_details,
-    )
-    monkeypatch.setattr(
-        "app.api.routers.scraping.save_result",
-        mock_save_result,
-    )
+    monkeypatch.setattr("app.api.routers.scraping.scrape_movie_details", mock_scrape_movie_details)
+    monkeypatch.setattr("app.api.routers.scraping.save_result", mock_save_result)
 
-    transport = ASGITransport(app=app)
-
-    async with AsyncClient(
-        transport=transport,
-        base_url="http://test",
-    ) as ac:
-        response = await ac.post(
-            "/scrape/movie/details",
-            json={"title": "Fake Movie"},
-        )
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        response = await ac.post("/scrape/movie/details", json={"title": "Inception"})
 
     assert response.status_code == 200
-    data = response.json()
-    assert data["title"] == "Fake Movie"
-    assert data["url"] == "https://ua.kinorium.com/fake-movie"
-    assert isinstance(data["genres"], list)
+    assert response.json()["title"] == "Inception"
+    assert "url" in response.json()

@@ -27,11 +27,11 @@ class MovieRequest(BaseModel):
     "/genre",
     response_model=GenreResponse,
     summary="Scrape movies by genre",
-    description="Fetches a list of movies from Kinorium by genre and page number",
+    description="Fetches a list of movies by genre and page number",
     status_code=200,
 )
 async def scrape_by_genre(
-    genre: str = Query(..., min_length=2),
+    genre: int = Query(..., ge=1),
     page: int = Query(1, ge=1),
 ):
     try:
@@ -39,7 +39,7 @@ async def scrape_by_genre(
     except httpx.HTTPError:
         raise HTTPException(
             status_code=502,
-            detail="Failed to fetch data from Kinorium",
+            detail="Failed to fetch data",
         )
 
     movies = [MovieShort(**movie) for movie in movies_data]
@@ -56,31 +56,22 @@ async def scrape_by_genre(
     "/movie/details",
     response_model=MovieDetails,
     summary="Get detailed movie information",
-    description="Searches for a movie on Kinorium and scrapes detailed information",
+    description="Searches for a movie and scrapes detailed information",
     status_code=200,
 )
 async def get_movie_details(
     request: MovieRequest,
     session: AsyncSession = Depends(get_async_session),
 ):
-    url = await find_movie_url(request.title)
-    if not url:
-        raise HTTPException(
-            status_code=404,
-            detail="Movie not found",
-        )
-
     try:
-        data = await scrape_movie_details(url)
-    except RuntimeError:
-        raise HTTPException(
-            status_code=503,
-            detail="Browser scraping error",
-        )
+        data = await scrape_movie_details(request.title)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Movie not found")
+    except Exception:
+        raise HTTPException(status_code=503, detail="Scraping failed")
 
     movie = MovieDetails(**data)
     await save_result(session, movie)
-
     return movie
 
 

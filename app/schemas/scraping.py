@@ -3,7 +3,7 @@ from .movie import MovieShort
 
 
 class GenreResponse(BaseModel):
-    genre: str
+    genre: int
     page: int
     count: int
     movies: list[MovieShort]

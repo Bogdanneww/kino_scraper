@@ -1,26 +1,30 @@
-import httpx
-from bs4 import BeautifulSoup
+from playwright.async_api import async_playwright
 from app.core.config import settings
+from app.services.http_scraper import HEADERS
 
 
 async def find_movie_url(title: str) -> str | None:
-    search_url = f"{settings.BASE_URL}/search/"
-    params = {"q": title}
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=settings.PLAYWRIGHT_HEADLESS)
+        context = await browser.new_context(user_agent=HEADERS["User-Agent"])
+        page = await context.new_page()
 
-    async with httpx.AsyncClient(
-        timeout=settings.HTTP_TIMEOUT
-    ) as client:
-        response = await client.get(search_url, params=params)
+        try:
+            await page.goto(f"{settings.BASE_URL}/search/?q={title}", wait_until="networkidle", timeout=15000)
 
-    response.raise_for_status()
+            movie_link_selector = ".item.search[data-type='movie'] .title a, .item.search .title a"
+            await page.wait_for_selector(movie_link_selector, timeout=10000)
 
-    soup = BeautifulSoup(response.text, "html.parser")
+            link_element = page.locator(movie_link_selector).first
+            href = await link_element.get_attribute("href")
 
-    first_result = soup.select_one(
-        ".search-results-item__title a[href]"
-    )
+            if not href:
+                return None
 
-    if not first_result:
-        return None
+            full_url = settings.BASE_URL + href if href.startswith('/') else href
+            return full_url
 
-    return settings.BASE_URL + first_result["href"]
+        except Exception:
+            return None
+        finally:
+            await browser.close()

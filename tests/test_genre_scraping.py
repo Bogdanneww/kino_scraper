@@ -1,6 +1,5 @@
 import pytest
 from httpx import AsyncClient, ASGITransport
-
 from app.main import app
 
 
@@ -8,44 +7,24 @@ from app.main import app
 async def test_genre_scraping_success(monkeypatch):
     async def mock_scrape_movies(genre, page):
         return [
-            {"title": "Terminator", "url": "https://ua.kinorium.com/123/"},
-            {"title": "Matrix", "url": "https://ua.kinorium.com/456/"}
+            {"title": "Terminator", "url": "https://ua.kinorium.com/1/"},
+            {"title": "Matrix", "url": "https://ua.kinorium.com/2/"}
         ]
 
-    monkeypatch.setattr(
-        "app.api.routers.scraping.scrape_movies_by_genre",
-        mock_scrape_movies
-    )
+    monkeypatch.setattr("app.api.routers.scraping.scrape_movies_by_genre", mock_scrape_movies)
 
-    transport = ASGITransport(app=app)
-
-    async with AsyncClient(
-        transport=transport,
-        base_url="http://test",
-    ) as ac:
-        response = await ac.get(
-            "/scrape/genre",
-            params={"genre": "action"},
-        )
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        response = await ac.get("/scrape/genre", params={"genre": 1, "page": 1})
 
     assert response.status_code == 200
     data = response.json()
-    assert data["genre"] == "action"
+    assert data["genre"] == 1
     assert data["count"] == 2
     assert data["movies"][0]["title"] == "Terminator"
 
 
 @pytest.mark.asyncio
 async def test_genre_scraping_invalid_genre():
-    transport = ASGITransport(app=app)
-
-    async with AsyncClient(
-        transport=transport,
-        base_url="http://test",
-    ) as ac:
-        response = await ac.get(
-            "/scrape/genre",
-            params={"genre": "a"},
-        )
-
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        response = await ac.get("/scrape/genre", params={"genre": 0})
     assert response.status_code == 422
