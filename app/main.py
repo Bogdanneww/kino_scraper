@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.api.routers import scraping
@@ -6,18 +7,23 @@ from app.db.database import engine
 from app.db.models import Base
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    yield
+
+
 def create_app() -> FastAPI:
     app = FastAPI(
         title="Kino Scraper API",
         version="0.1.0",
+        lifespan=lifespan,
     )
 
     app.include_router(scraping.router)
 
-    @app.on_event("startup")
-    async def on_startup() -> None:
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
 
     @app.get("/", response_model=StatusResponse, tags=["Health"])
     async def root() -> StatusResponse:

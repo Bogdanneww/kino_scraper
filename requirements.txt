@@ -19,6 +19,8 @@ pydantic-settings==2.12.0
 pydantic_core==2.41.5
 pyee==13.0.0
 python-dotenv==1.2.1
+pytest
+pytest-asyncio
 PyYAML==6.0.3
 soupsieve==2.8.1
 sqlalchemy>=2.0

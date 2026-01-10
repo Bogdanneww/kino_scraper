@@ -1,5 +1,6 @@
 import pytest
-from httpx import AsyncClient
+from httpx import AsyncClient, ASGITransport
+
 from app.main import app
 
 
@@ -23,19 +24,24 @@ async def test_movie_details_success(monkeypatch):
         return None
 
     monkeypatch.setattr(
-        "app.services.search.find_movie_url",
+        "app.api.routers.scraping.find_movie_url",
         mock_find_movie_url,
     )
     monkeypatch.setattr(
-        "app.services.browser_scraper.scrape_movie_details",
+        "app.api.routers.scraping.scrape_movie_details",
         mock_scrape_movie_details,
     )
     monkeypatch.setattr(
-        "app.crud.scraping_result.save_result",
+        "app.api.routers.scraping.save_result",
         mock_save_result,
     )
 
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    transport = ASGITransport(app=app)
+
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://test",
+    ) as ac:
         response = await ac.post(
             "/scrape/movie/details",
             json={"title": "Fake Movie"},
@@ -44,4 +50,5 @@ async def test_movie_details_success(monkeypatch):
     assert response.status_code == 200
     data = response.json()
     assert data["title"] == "Fake Movie"
+    assert data["url"] == "https://ua.kinorium.com/fake-movie"
     assert isinstance(data["genres"], list)
