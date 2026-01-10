@@ -1,6 +1,5 @@
 import pytest
 from httpx import AsyncClient
-
 from app.main import app
 
 
@@ -20,11 +19,27 @@ async def test_movie_details_success(monkeypatch):
             "url": url,
         }
 
-    monkeypatch.setattr("app.services.search.find_movie_url", mock_find_movie_url)
-    monkeypatch.setattr("app.services.browser_scraper.scrape_movie_details", mock_scrape_movie_details)
+    async def mock_save_result(session, movie):
+        return None
+
+    monkeypatch.setattr(
+        "app.services.search.find_movie_url",
+        mock_find_movie_url,
+    )
+    monkeypatch.setattr(
+        "app.services.browser_scraper.scrape_movie_details",
+        mock_scrape_movie_details,
+    )
+    monkeypatch.setattr(
+        "app.crud.scraping_result.save_result",
+        mock_save_result,
+    )
 
     async with AsyncClient(app=app, base_url="http://test") as ac:
-        response = await ac.post("/scrape/movie/details", json={"title": "Fake Movie"})
+        response = await ac.post(
+            "/scrape/movie/details",
+            json={"title": "Fake Movie"},
+        )
 
     assert response.status_code == 200
     data = response.json()

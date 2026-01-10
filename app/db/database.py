@@ -1,30 +1,22 @@
-from pathlib import Path
-
 from sqlalchemy.ext.asyncio import (
-    AsyncSession,
-    async_sessionmaker,
     create_async_engine,
+    async_sessionmaker,
+    AsyncSession,
 )
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import DeclarativeBase
 
+DATABASE_URL = "sqlite+aiosqlite:///./db.sqlite3"
 
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-STORAGE_DIR = BASE_DIR / "storage"
-STORAGE_DIR.mkdir(exist_ok=True)
-
-DATABASE_URL = f"sqlite+aiosqlite:///{STORAGE_DIR / 'kino.db'}"
-
-engine = create_async_engine(
-    DATABASE_URL,
-    echo=False,
-)
+engine = create_async_engine(DATABASE_URL, echo=False)
 
 AsyncSessionLocal = async_sessionmaker(
     engine,
     expire_on_commit=False,
 )
 
-Base = declarative_base()
+
+class Base(DeclarativeBase):
+    pass
 
 
 async def get_async_session() -> AsyncSession:
