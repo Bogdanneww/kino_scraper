@@ -8,6 +8,7 @@ async def save_result(
     session: AsyncSession,
     movie: MovieDetails,
 ) -> None:
+    """Save movie details to the database asynchronously."""
     obj = ScrapingResult(
         title=movie.title,
         year=movie.year,

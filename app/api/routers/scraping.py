@@ -34,6 +34,7 @@ async def scrape_by_genre(
     genre: int = Query(..., ge=1),
     page: int = Query(1, ge=1),
 ):
+    """Fetch movies by genre using simple HTTP requests."""
     try:
         movies_data = await scrape_movies_by_genre(genre, page)
     except httpx.HTTPError:
@@ -63,6 +64,7 @@ async def get_movie_details(
     request: MovieRequest,
     session: AsyncSession = Depends(get_async_session),
 ):
+    """Scrape movie details via headless browser and save to DB."""
     try:
         data = await scrape_movie_details(request.title)
     except ValueError:
@@ -83,6 +85,7 @@ async def get_movie_details(
     status_code=200,
 )
 async def open_movie(request: MovieRequest):
+    """Open movie page in a non-headless browser window."""
     url = await find_movie_url(request.title)
     if not url:
         raise HTTPException(

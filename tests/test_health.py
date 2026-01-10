@@ -6,6 +6,7 @@ from app.main import app
 
 @pytest.mark.asyncio
 async def test_root_status():
+    """Test the application health check endpoint."""
     transport = ASGITransport(app=app)
 
     async with AsyncClient(

@@ -6,6 +6,7 @@ from app.main import app
 
 @pytest.mark.asyncio
 async def test_open_movie_success(monkeypatch):
+    """Test opening a movie page URL in the browser using mocks."""
     async def mock_find_movie_url(title):
         return "https://ua.kinorium.com/fake-movie"
 
